@@ -223,3 +223,6 @@ evmd start "$TRACE" \
 	--home "$HOMEDIR" \
 	--json-rpc.api eth,txpool,personal,net,debug,web3 \
 	--chain-id "$CHAINID"
+
+
+# testing
