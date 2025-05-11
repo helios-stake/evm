@@ -47,11 +47,11 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/zondax/hid v0.9.2
 	go.uber.org/mock v0.5.2
-	golang.org/x/crypto v0.37.0
+	golang.org/x/crypto v0.38.0
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 	golang.org/x/net v0.39.0
-	golang.org/x/sync v0.13.0
-	golang.org/x/text v0.24.0
+	golang.org/x/sync v0.14.0
+	golang.org/x/text v0.25.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250414145226-207652e42e2e
 	google.golang.org/grpc v1.72.0
 	google.golang.org/protobuf v1.36.6
@@ -246,8 +246,8 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.15.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
-	golang.org/x/sys v0.32.0 // indirect
-	golang.org/x/term v0.31.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
 	golang.org/x/tools v0.31.0 // indirect
 	google.golang.org/api v0.222.0 // indirect
@@ -263,14 +263,10 @@ require (
 )
 
 replace (
-	// need this replace to pick up the store changes (Copy func) in our cosmos-sdk branch
-	//todo: merge this sdk release
-	cosmossdk.io/store => github.com/helios-stake/cosmos-sdk/store v0.0.0-20250506132113-432b998588cc
-
 	// use cosmos fork of keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
 	// use Cosmos-SDK fork to enable Ledger functionality
-	github.com/cosmos/cosmos-sdk => github.com/helios-stake/cosmos-sdk v0.0.0-20250506132113-432b998588cc
+	github.com/cosmos/cosmos-sdk => github.com/cosmos/cosmos-sdk v0.53.1-0.20250508170502-07eebe392e35
 	// use Cosmos geth fork
 	github.com/ethereum/go-ethereum => github.com/cosmos/go-ethereum v1.10.26-evmos-rc4.0.20250402013457-cf9d288f0147
 	// Security Advisory https://github.com/advisories/GHSA-h395-qcrw-5vmq
