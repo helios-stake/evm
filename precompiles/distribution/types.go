@@ -161,6 +161,34 @@ func NewMsgFundCommunityPool(denom string, args []interface{}) (*distributiontyp
 	return msg, depositorAddress, nil
 }
 
+// NewMsgDepositValidatorRewardsPool creates a new MsgDepositValidatorRewardsPool message.
+func NewMsgDepositValidatorRewardsPool(denom string, args []interface{}) (*distributiontypes.MsgDepositValidatorRewardsPool, common.Address, error) {
+    if len(args) != 3 {
+        return nil, common.Address{}, fmt.Errorf(cmn.ErrInvalidNumberOfArgs, 3, len(args))
+    }
+
+    depositorAddr, ok := args[0].(common.Address)
+	if !ok || depositorAddr == (common.Address{}) {
+		return nil, common.Address{}, fmt.Errorf(cmn.ErrInvalidHexAddress, args[0])
+	}
+
+	validatorAddress, _ := args[1].(string)
+
+    amount, ok := args[2].(*big.Int)
+    if !ok {
+        return nil, common.Address{}, fmt.Errorf("invalid amount type: expected *big.Int, got %T", args[1])
+    }
+
+    // Create the message
+    msg := &distributiontypes.MsgDepositValidatorRewardsPool{
+        Depositor:        depositorAddr.String(), // The validator is the depositor
+        ValidatorAddress: validatorAddress,
+        Amount:           sdk.Coins{sdk.Coin{Denom: denom, Amount: math.NewIntFromBigInt(amount)}},
+    }
+
+    return msg, depositorAddr, nil
+}
+
 // NewValidatorDistributionInfoRequest creates a new QueryValidatorDistributionInfoRequest  instance and does sanity
 // checks on the provided arguments.
 func NewValidatorDistributionInfoRequest(args []interface{}) (*distributiontypes.QueryValidatorDistributionInfoRequest, error) {
@@ -299,6 +327,16 @@ func NewDelegatorWithdrawAddressRequest(args []interface{}) (*distributiontypes.
 	return &distributiontypes.QueryDelegatorWithdrawAddressRequest{
 		DelegatorAddress: sdk.AccAddress(delegatorAddress.Bytes()).String(),
 	}, nil
+}
+
+// NewCommunityPoolRequest creates a new CommunityPool request.
+func NewCommunityPoolRequest(args []interface{}) (*distributiontypes.QueryCommunityPoolRequest, error) {
+	// CommunityPool query doesn't require any arguments
+	if len(args) != 0 {
+		return nil, fmt.Errorf(cmn.ErrInvalidNumberOfArgs, 0, len(args))
+	}
+
+	return &distributiontypes.QueryCommunityPoolRequest{}, nil
 }
 
 // ValidatorDistributionInfo is a struct to represent the key information from

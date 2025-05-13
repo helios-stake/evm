@@ -10,6 +10,7 @@ address constant DISTRIBUTION_PRECOMPILE_ADDRESS = 0x000000000000000000000000000
 string constant MSG_SET_WITHDRAWER_ADDRESS = "/cosmos.distribution.v1beta1.MsgSetWithdrawAddress";
 string constant MSG_WITHDRAW_DELEGATOR_REWARD = "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward";
 string constant MSG_WITHDRAW_VALIDATOR_COMMISSION = "/cosmos.distribution.v1beta1.MsgWithdrawValidatorCommission";
+string constant MSG_DEPOSIT_VALIDATOR_REWARDS_POOL = "/cosmos.distribution.v1beta1.MsgDepositValidatorRewardsPool";
 
 /// @dev The DistributionI contract's instance.
 DistributionI constant DISTRIBUTION_CONTRACT = DistributionI(
@@ -74,6 +75,17 @@ interface DistributionI {
     /// @param amount the amount being sent to the community pool
     event FundCommunityPool(address indexed depositor, uint256 amount);
 
+    /// @dev DepositValidatorRewardsPool defines an Event emitted when an account
+    /// deposits into the validator's rewards pool
+    /// @param depositor the address depositing into the validator's rewards pool
+    /// @param validatorAddress the address of the validator
+    /// @param amount the amount being deposited into the validator's rewards pool
+    event DepositValidatorRewardsPool(
+        address indexed depositor,
+        string indexed validatorAddress,
+        uint256 amount
+    );
+
     /// TRANSACTIONS
 
     /// @dev Claims all rewards from a select set of validators or all of them for a delegator.
@@ -118,6 +130,18 @@ interface DistributionI {
     /// @return success Whether the transaction was successful or not
     function fundCommunityPool(
         address depositor,
+        uint256 amount
+    ) external returns (bool success);
+
+    /// @dev DepositValidatorRewardsPool defines a method to allow an account to directly
+    /// deposit into the validator's rewards pool.
+    /// @param depositor The address of the depositor
+    /// @param validatorAddress The address of the validator
+    /// @param amount The amount of coin sent to the validator's rewards pool
+    /// @return success Whether the transaction was successful or not
+    function depositValidatorRewardsPool(
+        address depositor,
+        string memory validatorAddress,
         uint256 amount
     ) external returns (bool success);
 
@@ -204,4 +228,8 @@ interface DistributionI {
     function delegatorWithdrawAddress(
         address delegatorAddress
     ) external view returns (string memory withdrawAddress);
+
+    /// @dev Queries the current contents of the community pool.
+    /// @return pool The current contents of the community pool
+    function communityPool() external view returns (DecCoin[] calldata pool);
 }

@@ -28,6 +28,9 @@ const (
 	FundCommunityPoolMethod = "fundCommunityPool"
 	// ClaimRewardsMethod defines the ABI method name for the custom ClaimRewards transaction
 	ClaimRewardsMethod = "claimRewards"
+	// DepositValidatorRewardsPoolMethod defines the ABI method name for the distribution
+	// DepositValidatorRewardsPool transaction.
+	DepositValidatorRewardsPoolMethod = "depositValidatorRewardsPool"
 )
 
 // ClaimRewards claims the rewards accumulated by a delegator from multiple or all validators.
@@ -301,4 +304,55 @@ func (p Precompile) getWithdrawerHexAddr(ctx sdk.Context, delegatorAddr common.A
 	}
 
 	return common.BytesToAddress(withdrawerAccAddr), nil
+}
+
+// DepositValidatorRewardsPool deposits tokens into a validator's rewards pool.
+func (p *Precompile) DepositValidatorRewardsPool(
+	ctx sdk.Context,
+	origin common.Address,
+	contract *vm.Contract,
+	stateDB vm.StateDB,
+	method *abi.Method,
+	args []interface{},
+) ([]byte, error) {
+	// Get base denom
+	baseDenom, err := sdk.GetBaseDenom()
+	if err != nil {
+		return nil, err
+	}
+
+	msg, depositorHexAddr, err := NewMsgDepositValidatorRewardsPool(baseDenom, args)
+	if err != nil {
+		return nil, err
+	}
+
+	// If the contract is the depositor, we don't need an origin check
+	// Otherwise check if the origin matches the depositor address
+	isContractDepositor := contract.CallerAddress == depositorHexAddr && origin != depositorHexAddr
+	if !isContractDepositor && origin != depositorHexAddr {
+		return nil, fmt.Errorf(cmn.ErrSpenderDifferentOrigin, origin.String(), depositorHexAddr.String())
+	}
+
+	// Send the message
+	msgSrv := distributionkeeper.NewMsgServerImpl(p.distributionKeeper)
+	_, err = msgSrv.DepositValidatorRewardsPool(ctx, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	if contract.CallerAddress != origin {
+		// TODO: check if correct - should the balance change in the state DB be for the evm denom?? do we need scaling here?
+		convertedAmount := evmtypes.ConvertAmountTo18DecimalsBigInt(msg.Amount.AmountOf(baseDenom).BigInt())
+		// check if converted amount is greater than zero
+		if convertedAmount.Cmp(common.Big0) == 1 {
+			p.SetBalanceChangeEntries(cmn.NewBalanceChangeEntry(depositorHexAddr, convertedAmount, cmn.Sub))
+		}
+	}
+
+	// Emit event
+	if err = p.EmitDepositValidatorRewardsPoolEvent(ctx, stateDB, depositorHexAddr, msg.ValidatorAddress, msg.Amount); err != nil {
+		return nil, err
+	}
+
+	return method.Outputs.Pack(true)
 }

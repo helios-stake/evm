@@ -35,6 +35,8 @@ const (
 	// DelegatorWithdrawAddressMethod defines the ABI method name for the
 	// DelegatorWithdrawAddress query.
 	DelegatorWithdrawAddressMethod = "delegatorWithdrawAddress"
+	// CommunityPoolMethod defines the ABI method name for the CommunityPool query.
+	CommunityPoolMethod = "communityPool"
 )
 
 // ValidatorDistributionInfo returns the distribution info for a validator.
@@ -216,4 +218,28 @@ func (p Precompile) DelegatorWithdrawAddress(
 	}
 
 	return method.Outputs.Pack(res.WithdrawAddress)
+}
+
+// CommunityPool returns the current contents of the community pool.
+func (p Precompile) CommunityPool(
+	ctx sdk.Context,
+	_ *vm.Contract,
+	method *abi.Method,
+	args []interface{},
+) ([]byte, error) {
+	// Create the request
+	req, err := NewCommunityPoolRequest(args)
+	if err != nil {
+		return nil, err
+	}
+
+	// Query the community pool
+	querier := distributionkeeper.Querier{Keeper: p.distributionKeeper}
+	res, err := querier.CommunityPool(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Pack the response
+	return method.Outputs.Pack(cmn.NewDecCoinsResponse(res.Pool))
 }
