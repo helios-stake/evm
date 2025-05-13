@@ -574,3 +574,119 @@ func (s *PrecompileTestSuite) TestFundCommunityPool() {
 		})
 	}
 }
+
+func (s *PrecompileTestSuite) TestDepositValidatorRewardsPool() {
+    var ctx sdk.Context
+    method := s.precompile.Methods[distribution.DepositValidatorRewardsPoolMethod]
+
+    testCases := []struct {
+        name        string
+        malleate    func(val stakingtypes.Validator) []interface{}
+        postCheck   func(data []byte)
+        gas         uint64
+        expError    bool
+        errContains string
+    }{
+        {
+            "fail - empty input args",
+            func(stakingtypes.Validator) []interface{} {
+                return []interface{}{}
+            },
+            func([]byte) {},
+            200000,
+            true,
+            fmt.Sprintf(cmn.ErrInvalidNumberOfArgs, 3, 0),
+        },
+        {
+            "fail - invalid depositor address",
+            func(val stakingtypes.Validator) []interface{} {
+                return []interface{}{
+                    nil,
+                    val.OperatorAddress,
+                    big.NewInt(1e17),
+                }
+            },
+            func([]byte) {},
+            200000,
+            true,
+            "invalid hex address address",
+        },
+        {
+            "fail - invalid validator address",
+            func(stakingtypes.Validator) []interface{} {
+                return []interface{}{
+                    s.keyring.GetAddr(0),
+                    "invalid-address",
+                    big.NewInt(1e17),
+                }
+            },
+            func([]byte) {},
+            200000,
+            true,
+            "decoding bech32 failed",
+        },
+        {
+            "fail - insufficient balance",
+            func(val stakingtypes.Validator) []interface{} {
+                return []interface{}{
+                    s.keyring.GetAddr(0),
+                    val.OperatorAddress,
+                    big.NewInt(1e18),
+                }
+            },
+            func([]byte) {},
+            200000,
+            true,
+            "insufficient funds",
+        },
+		{
+            "success - deposit to validator rewards pool",
+            func(val stakingtypes.Validator) []interface{} {
+                return []interface{}{
+                    s.keyring.GetAddr(0),
+                    val.OperatorAddress,
+                    big.NewInt(1e17),
+                }
+            },
+            func(data []byte) {
+                // Check depositor's balance after deposit
+                balance := s.network.App.BankKeeper.GetBalance(ctx, s.keyring.GetAddr(0).Bytes(), testconstants.ExampleAttoDenom)
+                s.Require().Equal(network.PrefundedAccountInitialBalance.Sub(math.NewInt(1e17)), balance.Amount)
+            },
+            20000,
+            false,
+            "",
+        },
+    }
+
+    for _, tc := range testCases {
+        s.Run(tc.name, func() {
+            s.SetupTest()
+            ctx = s.network.GetContext()
+
+            var contract *vm.Contract
+            contract, ctx = testutil.NewPrecompileContract(s.T(), ctx, s.keyring.GetAddr(0), s.precompile, tc.gas)
+
+            // Sanity check to make sure the starting balance is always 100k ATOM
+            balance := s.network.App.BankKeeper.GetBalance(ctx, s.keyring.GetAddr(0).Bytes(), testconstants.ExampleAttoDenom)
+            s.Require().Equal(balance.Amount, network.PrefundedAccountInitialBalance)
+
+			args := tc.malleate(s.network.GetValidators()[0])
+            bz, err := s.precompile.DepositValidatorRewardsPool(
+                ctx,
+                s.keyring.GetAddr(0),
+                contract,
+                s.network.GetStateDB(),
+                &method,
+                args,
+            )
+
+            if tc.expError {
+                s.Require().ErrorContains(err, tc.errContains)
+            } else {
+                s.Require().NoError(err)
+                tc.postCheck(bz)
+            }
+        })
+    }
+}
