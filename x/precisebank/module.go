@@ -32,7 +32,6 @@ var (
 
 	_ appmodule.AppModule   = AppModule{}
 	_ module.HasABCIGenesis = AppModule{}
-	_ module.HasInvariants  = AppModule{}
 )
 
 // ----------------------------------------------------------------------------
