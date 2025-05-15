@@ -566,7 +566,7 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 	}
 
 	// compute and use base fee of height that is being traced
-	baseFee := k.feeMarketWrapper.CalculateBaseFee(ctx)
+	baseFee := k.feeMarketWrapper.GetBaseFee(ctx)
 	if baseFee != nil {
 		cfg.BaseFee = baseFee
 	}
